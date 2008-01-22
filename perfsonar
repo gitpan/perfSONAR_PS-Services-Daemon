@@ -16,7 +16,7 @@ The verbose flag allows lots of debug options to print to the screen.  If the op
 omitted the service will run in daemon mode.
 =cut
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 use warnings;
 use strict;
@@ -29,7 +29,6 @@ use POSIX ":sys_wait_h";
 use Cwd;
 use Config::General;
 use Module::Load;
-use Data::Dumper;
 use HTTP::Daemon;
 
 sub psService($$$);
@@ -87,6 +86,7 @@ use perfSONAR_PS::Request;
 use perfSONAR_PS::RequestHandler;
 use perfSONAR_PS::XML::Document_string;
 use perfSONAR_PS::Error_compat qw/:try/;
+use perfSONAR_PS::Error;
 
 my %child_pids = ();
 

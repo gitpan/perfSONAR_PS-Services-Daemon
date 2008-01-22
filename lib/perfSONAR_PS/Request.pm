@@ -1,6 +1,6 @@
 package perfSONAR_PS::Request;
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 use fields 'REQUEST', 'REQUESTDOM', 'RESPONSE', 'RESPONSEMESSAGE', 'START_TIME', 'CALL', 'NAMESPACES';
 
@@ -73,6 +73,7 @@ sub getEndpoint($) {
     my $endpoint = $self->{REQUEST}->uri;
 
     $endpoint =~ s/\/\//\//;
+    $endpoint =~ s/^\///;
 
     return $endpoint;
 }
