@@ -1,6 +1,6 @@
 package perfSONAR_PS::Request;
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 use fields 'REQUEST', 'REQUESTDOM', 'RESPONSE', 'RESPONSEMESSAGE', 'START_TIME', 'CALL', 'NAMESPACES';
 
@@ -15,7 +15,7 @@ use perfSONAR_PS::Common;
 sub new($$$);
 sub setRequest($$);
 sub getEndpoint($);
-sub parse($$);
+sub parse($$$);
 sub remapRequest($$);
 sub getURI($);
 sub getRawRequest($);
@@ -78,8 +78,8 @@ sub getEndpoint($) {
     return $endpoint;
 }
 
-sub parse($$) {
-    my ($self, $error) = @_;
+sub parse($$$) {
+    my ($self, $namespace_map, $error) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
 
     if (!defined $self->{REQUEST}) {
@@ -105,6 +105,8 @@ sub parse($$) {
     }
 
     &perfSONAR_PS::Common::mapNamespaces($dom->getDocumentElement, $self->{NAMESPACES});
+
+    &perfSONAR_PS::Common::reMap($self->{NAMESPACES}, $namespace_map, $dom->getDocumentElement, 0);
 
     my $nmwg_prefix = $self->{NAMESPACES}->{"http://ggf.org/ns/nmwg/base/2.0/"};
     if (!defined $nmwg_prefix) {

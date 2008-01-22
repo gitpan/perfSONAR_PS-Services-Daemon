@@ -1,6 +1,6 @@
 package perfSONAR_PS::RequestHandler;
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 =head1 NAME
 
@@ -57,11 +57,10 @@ sub new($) {
     message.
 =cut
 sub addFullMessageHandler($$$$) {
-    my ($self, $messageType, $service, $handle_chaining) = validate_pos(@_,
+    my ($self, $messageType, $service) = validate_pos(@_,
                 1,
                 { type => SCALAR },
                 { can => 'handleMessage'},
-                { type => SCALAR | UNDEF, optional => 1},
             );
 
     my $logger = get_logger("perfSONAR_PS::RequestHandler");
@@ -92,11 +91,10 @@ sub addFullMessageHandler($$$$) {
     been handled.
 =cut
 sub addMessageHandler($$$) {
-    my ($self, $messageType, $service, $handle_chaining) = validate_pos(@_,
+    my ($self, $messageType, $service) = validate_pos(@_,
                 1,
                 { type => SCALAR },
                 { can => [ 'handleMessageBegin', 'handleMessageEnd', 'handleEvent' ]}
-                { type => SCALAR | UNDEF, optional => 1},
             );
 
     my $logger = get_logger("perfSONAR_PS::RequestHandler");
@@ -121,12 +119,11 @@ sub addMessageHandler($$$) {
     specified type found in a message of the specified type.
 =cut
 sub addEventHandler($$$$) {
-    my ($self, $messageType, $eventType, $service, $handle_chaining) = validate_pos(@_,
+    my ($self, $messageType, $eventType, $service) = validate_pos(@_,
                 1,
                 { type => SCALAR },
                 { type => SCALAR },
                 { can => [ 'handleEvent' ]}
-                { type => SCALAR | UNDEF, optional => 1},
             );
 
     my $logger = get_logger("perfSONAR_PS::RequestHandler");
@@ -156,12 +153,11 @@ sub addEventHandler($$$$) {
     type.
 =cut
 sub addEventHandler_Regex($$$$) {
-    my ($self, $messageType, $eventRegex, $service, $handle_chaining) = validate_pos(@_,
+    my ($self, $messageType, $eventRegex, $service) = validate_pos(@_,
                 1,
                 { type => SCALAR },
                 { type => SCALAR },
                 { can => [ 'handleEvent' ]}
-                { type => SCALAR | UNDEF, optional => 1},
             );
     my $logger = get_logger("perfSONAR_PS::RequestHandler");
 
@@ -432,7 +428,6 @@ sub handleMessage($$$) {
                 $found_md = 1;
 
                 my $eventType;
-		my $found_event_type = 0;
                 my $eventTypes = find($m, "./nmwg:eventType", 0);
                 my $found_event_type = 0;
                 foreach my $e ($eventTypes->get_nodelist) {
