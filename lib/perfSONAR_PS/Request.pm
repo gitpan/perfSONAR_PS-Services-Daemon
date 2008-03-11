@@ -1,38 +1,17 @@
 package perfSONAR_PS::Request;
 
-our $VERSION = 0.06;
-
 use fields 'REQUEST', 'REQUESTDOM', 'RESPONSE', 'RESPONSEMESSAGE', 'START_TIME', 'CALL', 'NAMESPACES';
 
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger);
-use XML::XPath;
 use XML::LibXML;
 
 use perfSONAR_PS::Common;
 
-sub new($$$);
-sub setRequest($$);
-sub getEndpoint($);
-sub parse($$$);
-sub remapRequest($$);
-sub getURI($);
-sub getRawRequest($);
-sub getRawRequestAsString($);
-sub getRequest($);
-sub getRequestAsXPath($);
-sub setResponse($$);
-sub setResponseAsXPath($$);
-sub getRequestDOM($);
-sub getResponse($);
-sub setNamespaces($$);
-sub getNamespaces($);
-sub setRequestDOM($$);
-sub finish($);
+our $VERSION = 0.08;
 
-
-sub new($$$) {
+sub new {
     my ($package, $call, $http_request) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
 
@@ -57,7 +36,7 @@ sub new($$$) {
     return $self;
 }
 
-sub setRequest($$) {
+sub setRequest {
     my ($self, $request) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if(defined $request and $request ne "") {
@@ -68,17 +47,16 @@ sub setRequest($$) {
     return;
 }
 
-sub getEndpoint($) {
+sub getEndpoint {
     my ($self) = @_;
     my $endpoint = $self->{REQUEST}->uri;
 
     $endpoint =~ s/\/\//\//;
-    $endpoint =~ s/^\///;
 
     return $endpoint;
 }
 
-sub parse($$$) {
+sub parse {
     my ($self, $namespace_map, $error) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
 
@@ -118,7 +96,7 @@ sub parse($$$) {
 
     my $messages = find($dom->getDocumentElement, ".//nmwg:message", 0);
 
-    if (!defined $messages or $messages->size() <= 0) {
+    if (not defined $messages or $messages->size() <= 0) {
         my $msg = "Couldn't find message element in request";
         $logger->error($msg);
         $$error = $msg if (defined $error);
@@ -142,19 +120,21 @@ sub parse($$$) {
     return 0;
 }
 
-sub remapRequest($$) {
+sub remapRequest {
     my ($self, $ns) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
 
-    if (!defined $self->{REQUESTDOM} or $self->{REQUESTDOM} eq "") {
+    if (not defined $self->{REQUESTDOM} or $self->{REQUESTDOM} eq "") {
         $logger->error("Tried to remap an unparsed request");
         return;
     }
 
     $self->{NAMESPACES} = &perfSONAR_PS::Common::reMap($self->{NAMESPACES}, $ns, $self->{REQUESTDOM});
+
+    return;
 }
 
-sub getURI($) {
+sub getURI {
     my ($self) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if (!defined $self->{REQUEST}) {
@@ -164,43 +144,19 @@ sub getURI($) {
     return $self->{REQUEST}->uri;
 }
 
-sub getRawRequest($) {
+sub getRawRequest {
     my ($self) = @_;
 
     return $self->{REQUEST};
 }
 
-sub getRawRequestAsString($) {
+sub getRawRequestAsString {
     my ($self) = @_;
 
     return $self->{REQUEST}->content;
 }
 
-sub getRequest($) {
-    my ($self) = @_;
-    my $logger = get_logger("perfSONAR_PS::Request");
-    my $xp = $self->getRequestAsXPath();
-    my $nodeset = find($xp, '//nmwg:message', 0);
-    if($nodeset->size() <= 0) {
-        $logger->error("Message element not found or in wrong namespace.");
-    } elsif($nodeset->size() >= 2) {
-        $logger->error("Too many Message elements found.");
-    } else {
-        return XML::XPath::XMLParser::as_string($nodeset->get_node(1));
-    }
-    return "";
-}
-
-sub getRequestAsXPath($) {
-    my ($self) = @_;
-    my $xp = XML::XPath->new( xml => $self->{REQUEST}->content );
-    $xp->clear_namespaces();
-    $xp->set_namespace('nmwg', 'http://ggf.org/ns/nmwg/base/2.0/');
-    return $xp;
-}
-
-
-sub setResponse($$) {
+sub setResponse {
     my ($self, $content) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if(defined $content and $content ne "") {
@@ -213,15 +169,7 @@ sub setResponse($$) {
     return;
 }
 
-sub setResponseAsXPath($$) {
-    my ($self, $xpath) = @_;
-    my $logger = get_logger("perfSONAR_PS::Request");
-    $logger->error("Missing argument.") unless defined $xpath;
-    my $content = XML::XPath::XMLParser::as_string( $xpath->findnodes( '/') );
-    return $self->setResponse( $content );
-}
-
-sub getRequestDOM($) {
+sub getRequestDOM {
     my ($self) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if($self->{REQUESTDOM}) {
@@ -232,7 +180,7 @@ sub getRequestDOM($) {
     }
 }
 
-sub getResponse($) {
+sub getResponse {
     my ($self) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if($self->{RESPONSEMESSAGE}) {
@@ -243,7 +191,7 @@ sub getResponse($) {
     }
 }
 
-sub setNamespaces($$) {
+sub setNamespaces {
     my ($self, $ns) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if(defined $ns and $ns ne "") {
@@ -255,7 +203,7 @@ sub setNamespaces($$) {
 }
 
 
-sub getNamespaces($) {
+sub getNamespaces {
     my ($self) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if($self->{NAMESPACES}) {
@@ -267,7 +215,7 @@ sub getNamespaces($) {
 }
 
 
-sub setRequestDOM($$) {
+sub setRequestDOM {
     my ($self, $dom) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if(defined $dom and $dom ne "") {
@@ -278,7 +226,7 @@ sub setRequestDOM($$) {
     return;
 }
 
-sub finish($) {
+sub finish {
     my ($self) = @_;
     my $logger = get_logger("perfSONAR_PS::Request");
     if(defined $self->{CALL} and $self->{CALL} ne "") {
@@ -340,15 +288,6 @@ Returns the URI for the specified request.
 Returns the request as it was given to the object(i.e. the underlying
 HTTP::Daemon::ClientConn object).
 
-=head2 getRequest($self)
-
-Returns the request from the client as a DOM tree rooted at the 'nmwg:message'
-element.
-
-=head2 getRequestAsXPath($self)
-
-Gets and returns the request as an XPath object.
-
 =head2 getRequestDOM($self)
 
 Gets and returns the contents of the request as a DOM object.
@@ -356,10 +295,6 @@ Gets and returns the contents of the request as a DOM object.
 =head2 setResponse($self, $content)
 
 Sets the response to the content.
-
-=head2 setResponseAsXPath($self, $xpath)
-
-Sets the response as an XPath object.
 
 =head2 getResponse($self)
 

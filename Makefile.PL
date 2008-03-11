@@ -7,25 +7,35 @@ WriteMakefile(
     'VERSION_FROM' => 'perfsonar',
     'AUTHOR' => 'Aaron Brown <aaron@internet2.edu>',
     'PREREQ_PM' => {
-        "strict" => 0,
-        "warnings" => 0,
-	"Log::Log4perl" => 1.00,
-	"Getopt::Long" => 0,
-	"POSIX" => 0,
-	"Fcntl" => 0,
-	"Cwd" => 0,
-	"File::Basename" => 0,
-	"Module::Load" => 0.10,
-	"Time::HiRes" => 1.85,
+	"base" => 0,
 	"Config::General" => 2.30,
-	"perfSONAR_PS::Common" => 0.06,
-	"perfSONAR_PS::Messages" => 0.06,
-	"perfSONAR_PS::Error_compat" => 0.06,
-	"perfSONAR_PS::XML::Document_string" => 0.06,
+	"Cwd" => 0,
+        "English" => 0,
+        "Error" => 0,
+	"Fcntl" => 0,
+	"fields" => 0,
+	"File::Basename" => 0,
+	"File::Temp" => 0,
+	"Getopt::Long" => 0,
 	"HTTP::Daemon" => 1.35,
+	"lib" => 0,
+	"Log::Log4perl" => 1.00,
+	"Log::Dispatch::Screen" => 1.00,
+	"Log::Dispatch::FileRotate" => 1.00,
+	"Log::Dispatch::Syslog" => 1.00,
+	"Module::Load" => 0.10,
 	"Params::Validate" => 0.70,
-	"XML::LibXML" => 1.60,
-	"XML::XPath" => 1.13,
+	"perfSONAR_PS::Common" => 0.08,
+	"perfSONAR_PS::Error" => 0.08,
+	"perfSONAR_PS::Error_compat" => 0.08,
+	"perfSONAR_PS::Messages" => 0.08,
+	"perfSONAR_PS::XML::Document_string" => 0.08,
+	"POSIX" => 0,
+        "strict" => 0,
+	"Sys::Hostname" => 0,
+	"Time::HiRes" => 1.85,
+        "warnings" => 0,
+	"XML::LibXML" => 1.58,
     },
 
     EXE_FILES => \@exe_files,
@@ -35,75 +45,95 @@ package MY;
 
 sub postamble {'
 
-sysconfdir	= $(PREFIX)/etc
+ifeq ($(PREFIX),/usr)
+  sysconfdir=/etc
+else
+  sysconfdir=$(PREFIX)/etc
+endif
+
+ifeq ($(PREFIX),/usr)
+  vardir=/var/run
+else
+  ifeq ($(PREFIX),/usr/local)
+    vardir=/var/run
+  else
+    vardir=$(PREFIX)/var/run
+  endif
+endif
 
 install ::
 
-	if [ "$(sysconfdir)" = "/usr/etc" ]; then \
-		if [ ! -d /etc/perfsonar ]; then \
-		    mkdir -p /etc/perfsonar; \
-		fi; \
-		\
-		if [ ! -f /etc/perfsonar/daemon.conf ]; then \
-		    touch /etc/perfsonar/daemon.conf; \
-		fi; \
-		\
-		if [ ! -f /etc/perfsonar/logger.conf ]; then \
-		    install -c -D -m 0644 logger.conf /etc/perfsonar/logger.conf; \
-		else \
-		    echo "Old configuration file exists at /etc/perfsonar/logger.conf: not overwritten."; \
-		fi; \
-		\
-		if [ -d /etc/init.d ]; then \
-		    mkdir -p /etc/init.d; \
-		fi; \
-		\
-		install -c -D -m 0755 perfsonar-daemon.init /etc/init.d/perfsonar-daemon; \
-		awk "{gsub(/^BINDIR=.*/,\"BINDIR=$(INSTALLBIN)\"); gsub(/^PREFIX=.*/,\"PREFIX=$(PREFIX)\"); gsub(/^CONFDIR=.*/,\"CONFDIR=/etc\"); print}" /etc/init.d/perfsonar-daemon > /etc/init.d/perfsonar-daemon.new; \
-		mv -f /etc/init.d/perfsonar-daemon.new /etc/init.d/perfsonar-daemon; \
-		chmod +x /etc/init.d/perfsonar-daemon; \
-		\
-		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLBIN)/perfsonar; \
-		awk "{gsub(/XXX_LIBDIR_XXX/,\"$(INSTALLSITELIB)\"); gsub(/XXX_CONFDIR_XXX/,\"/etc/perfsonar\"); print}" $(INSTALLBIN)/perfsonar > $(INSTALLBIN)/perfsonar.new; \
-		mv -f $(INSTALLBIN)/perfsonar.new $(INSTALLBIN)/perfsonar; \
-		chmod +x $(INSTALLBIN)/perfsonar; \
-		\
-		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLBIN)/psConfigureDaemon; \
-		awk "{gsub(/XXX_DEFAULT_XXX/,\"/etc/perfsonar/daemon.conf\"); print}" $(INSTALLBIN)/psConfigureDaemon > $(INSTALLBIN)/psConfigureDaemon.new; \
-		mv -f $(INSTALLBIN)/psConfigureDaemon.new $(INSTALLBIN)/psConfigureDaemon; \
-		chmod +x $(INSTALLBIN)/psConfigureDaemon; \
-	else \
-		if [ ! -d $(sysconfdir)/perfsonar ]; then \
+	if [ ! -d $(sysconfdir)/perfsonar ]; then \
 		    mkdir -p $(sysconfdir)/perfsonar; \
-		fi; \
-		\
-		if [ ! -f $(sysconfdir)/perfsonar/daemon.conf ]; then \
-		    touch $(sysconfdir)/perfsonar/daemon.conf; \
-		fi; \
-		\
-		if [ ! -f $(sysconfdir)/perfsonar/logger.conf ]; then \
-		    install -c -D -m 0644 logger.conf $(sysconfdir)/perfsonar/logger.conf; \
-		else \
-		    echo "Old configuration file exists at $(sysconfdir)/perfsonar/logger.conf: not overwritten."; \
-		fi; \
-		\
-		if [ -d $(sysconfdir)/init.d ]; then \
-		    mkdir -p $(sysconfdir)/init.d; \
-		fi; \
-		\
+	fi;
+
+	if [ ! -f $(sysconfdir)/perfsonar/daemon.conf ]; then \
+	    touch $(sysconfdir)/perfsonar/daemon.conf; \
+	fi;
+
+	if [ ! -f $(sysconfdir)/perfsonar/logger.conf ]; then \
+	    install -c -D -m 0644 logger.conf $(sysconfdir)/perfsonar/logger.conf; \
+	else \
+	    echo "Old configuration file exists at $(sysconfdir)/perfsonar/logger.conf: not overwritten."; \
+	fi;
+
+	if [ ! -d $(vardir) ]; then \
+		    mkdir -p $(vardir); \
+	fi;
+
+	if [ -d $(sysconfdir)/init.d ]; then \
+	    mkdir -p $(sysconfdir)/init.d; \
+	fi;
+
+	if [ -f $(INSTALLBIN)/perfsonar ]; then \
 		install -c -D -m 0755 perfsonar-daemon.init $(sysconfdir)/init.d/perfsonar-daemon; \
-		awk "{gsub(/^BINDIR=.*/,\"BINDIR=$(INSTALLBIN)\"); gsub(/^PREFIX=.*/,\"PREFIX=$(PREFIX)\"); gsub(/^CONFDIR=.*/,\"CONFDIR=$(sysconfdir)\"); print}" $(sysconfdir)/init.d/perfsonar-daemon > $(sysconfdir)/init.d/perfsonar-daemon.new; \
+		awk "{gsub(/^VARDIR=.*/,\"VARDIR=$(vardir)\"); gsub(/^BINDIR=.*/,\"BINDIR=$(INSTALLBIN)\"); gsub(/^PREFIX=.*/,\"PREFIX=$(PREFIX)\"); gsub(/^CONFDIR=.*/,\"CONFDIR=$(sysconfdir)\"); print}" $(sysconfdir)/init.d/perfsonar-daemon > $(sysconfdir)/init.d/perfsonar-daemon.new; \
 		mv -f $(sysconfdir)/init.d/perfsonar-daemon.new $(sysconfdir)/init.d/perfsonar-daemon; \
 		chmod +x $(sysconfdir)/init.d/perfsonar-daemon; \
-		\
+	elif [ -f $(INSTALLSITEBIN)/perfsonar ]; then \
+		install -c -D -m 0755 perfsonar-daemon.init $(sysconfdir)/init.d/perfsonar-daemon; \
+		awk "{gsub(/^VARDIR=.*/,\"VARDIR=$(vardir)\"); gsub(/^BINDIR=.*/,\"BINDIR=$(INSTALLSITEBIN)\"); gsub(/^PREFIX=.*/,\"PREFIX=$(PREFIX)\"); gsub(/^CONFDIR=.*/,\"CONFDIR=$(sysconfdir)\"); print}" $(sysconfdir)/init.d/perfsonar-daemon > $(sysconfdir)/init.d/perfsonar-daemon.new; \
+		mv -f $(sysconfdir)/init.d/perfsonar-daemon.new $(sysconfdir)/init.d/perfsonar-daemon; \
+		chmod +x $(sysconfdir)/init.d/perfsonar-daemon; \
+	elif [ -f $(INSTALLVENDORBIN)/perfsonar ]; then \
+		install -c -D -m 0755 perfsonar-daemon.init $(sysconfdir)/init.d/perfsonar-daemon; \
+		awk "{gsub(/^VARDIR=.*/,\"VARDIR=$(vardir)\"); gsub(/^BINDIR=.*/,\"BINDIR=$(INSTALLVENDORBIN)\"); gsub(/^PREFIX=.*/,\"PREFIX=$(PREFIX)\"); gsub(/^CONFDIR=.*/,\"CONFDIR=$(sysconfdir)\"); print}" $(sysconfdir)/init.d/perfsonar-daemon > $(sysconfdir)/init.d/perfsonar-daemon.new; \
+		mv -f $(sysconfdir)/init.d/perfsonar-daemon.new $(sysconfdir)/init.d/perfsonar-daemon; \
+		chmod +x $(sysconfdir)/init.d/perfsonar-daemon; \
+	fi;
+
+	if [ -f $(INSTALLBIN)/perfsonar ]; then \
 		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLBIN)/perfsonar; \
-		awk "{gsub(/XXX_LIBDIR_XXX/,\"$(INSTALLSITELIB)\"); gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLBIN)/perfsonar > $(INSTALLBIN)/perfsonar.new; \
+		awk "{gsub(/XXX_LIBDIR_XXX/,\"$(INSTALLPRIVLIB)\"); gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLBIN)/perfsonar > $(INSTALLBIN)/perfsonar.new; \
 		mv -f $(INSTALLBIN)/perfsonar.new $(INSTALLBIN)/perfsonar; \
 		chmod +x $(INSTALLBIN)/perfsonar; \
-		\
+	elif [ -f $(INSTALLSITEBIN)/perfsonar ]; then \
+		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLSITEBIN)/perfsonar; \
+		awk "{gsub(/XXX_LIBDIR_XXX/,\"$(INSTALLSITELIB)\"); gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLSITEBIN)/perfsonar > $(INSTALLSITEBIN)/perfsonar.new; \
+		mv -f $(INSTALLSITEBIN)/perfsonar.new $(INSTALLSITEBIN)/perfsonar; \
+		chmod +x $(INSTALLSITEBIN)/perfsonar; \
+	elif [ -f $(INSTALLVENDORBIN)/perfsonar ]; then \
+		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLVENDORBIN)/perfsonar; \
+		awk "{gsub(/XXX_LIBDIR_XXX/,\"$(INSTALLVENDORLIB)\"); gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLVENDORBIN)/perfsonar > $(INSTALLVENDORBIN)/perfsonar.new; \
+		mv -f $(INSTALLVENDORBIN)/perfsonar.new $(INSTALLVENDORBIN)/perfsonar; \
+		chmod +x $(INSTALLVENDORBIN)/perfsonar; \
+	fi;
+
+	if [ -f $(INSTALLBIN)/psConfigureDaemon ]; then \
 		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLBIN)/psConfigureDaemon; \
-		awk "{gsub(/XXX_DEFAULT_XXX/,\"$(sysconfdir)/perfsonar/daemon.conf\"); print}" $(INSTALLBIN)/psConfigureDaemon > $(INSTALLBIN)/psConfigureDaemon.new; \
+		awk "{gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLBIN)/psConfigureDaemon > $(INSTALLBIN)/psConfigureDaemon.new; \
 		mv -f $(INSTALLBIN)/psConfigureDaemon.new $(INSTALLBIN)/psConfigureDaemon; \
 		chmod +x $(INSTALLBIN)/psConfigureDaemon; \
+	elif [ -f $(INSTALLSITEBIN)/psConfigureDaemon ]; then \
+		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLSITEBIN)/psConfigureDaemon; \
+		awk "{gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLSITEBIN)/psConfigureDaemon > $(INSTALLSITEBIN)/psConfigureDaemon.new; \
+		mv -f $(INSTALLSITEBIN)/psConfigureDaemon.new $(INSTALLSITEBIN)/psConfigureDaemon; \
+		chmod +x $(INSTALLSITEBIN)/psConfigureDaemon; \
+	elif [ -f $(INSTALLVENDORBIN)/psConfigureDaemon ]; then \
+		perl -i -p -e "s/was_installed = 0/was_installed = 1/" $(INSTALLVENDORBIN)/psConfigureDaemon; \
+		awk "{gsub(/XXX_CONFDIR_XXX/,\"$(sysconfdir)/perfsonar\"); print}" $(INSTALLVENDORBIN)/psConfigureDaemon > $(INSTALLVENDORBIN)/psConfigureDaemon.new; \
+		mv -f $(INSTALLVENDORBIN)/psConfigureDaemon.new $(INSTALLVENDORBIN)/psConfigureDaemon; \
+		chmod +x $(INSTALLVENDORBIN)/psConfigureDaemon; \
 	fi;
+
 ';}

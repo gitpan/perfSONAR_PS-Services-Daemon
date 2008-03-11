@@ -5,11 +5,11 @@ use fields 'CONF',
 	'ENDPOINT',
 	'PORT';
 
-our $VERSION = 0.06;
-
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger);
+
+our $VERSION = 0.08;
 
 sub new {
 	my ($class, $conf, $port, $endpoint, $directory) = @_;
@@ -195,3 +195,4 @@ Copyright (c) 2004-2007, Internet2 and the University of Delaware
 All rights reserved.
 
 =cut
+# vim: expandtab shiftwidth=4 tabstop=4
